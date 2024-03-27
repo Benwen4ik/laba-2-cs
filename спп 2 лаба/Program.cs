@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,10 +21,9 @@ namespace спп_2_лаба
                 try
                 {
                     connection.Open();
-                    Console.WriteLine("Connection opened successfully.");
                     bool bl = true;
                     int a;
-                    while(bl == true)
+                    while (bl == true)
                     {
                         a = menu();
                         switch (a)
@@ -31,55 +31,60 @@ namespace спп_2_лаба
                             case 1: { SelectAllUsers(connection); break; }
                             case 2:
                                 {
-                                    Console.WriteLine("Enter id:");
+                                    Console.WriteLine("Введите id пользователя:");
                                     int id = Convert.ToInt32(Console.ReadLine());
-                                    SelectUsersByID(connection, id );
+                                    SelectUsersByID(connection, id);
                                     break;
                                 }
                             case 3:
                                 {
-                                    Console.WriteLine("Enter name:");
+                                    Console.WriteLine("Введите имя пользователя:");
                                     String name = Console.ReadLine();
                                     SelectUsersByName(connection, name);
                                     break;
                                 }
                             case 4:
                                 {
-                                    Console.WriteLine("Enter name:");
+                                    Console.WriteLine("Введите имя:");
                                     String name = Console.ReadLine();
-                                    Console.WriteLine("Enter surname:");
+                                    Console.WriteLine("Введите фамилию:");
                                     String surname = Console.ReadLine();
-                                    Console.WriteLine("Enter phone:");
-                                    int phone = Convert.ToInt32(Console.ReadLine());
-                                    InsertUser(connection, name, surname, phone);
+                                    Console.WriteLine("Введите телефон:");
+                                    long phone = Convert.ToInt64(Console.ReadLine());
+                                    Console.WriteLine("Введите email:");
+                                    String email = Console.ReadLine();
+                                    if (!email.Contains('@'))
+                                    {
+                                        Console.WriteLine("Введен неккоректный email(отсуствует @)");
+                                        break;
+                                    }
+                                    InsertUser(connection, name, surname, phone,email);
                                     break;
                                 }
                             case 5:
                                 {
-                                    Console.WriteLine("Enter delete user id:");
-                                    DeleteUserByID(connection, Convert.ToInt32(Console.ReadLine()) );
+                                    Console.WriteLine("Введите id для удаления:");
+                                    DeleteUserByID(connection, Convert.ToInt32(Console.ReadLine()));
                                     break;
                                 }
                             case 6: { bl = false; break; }
-                            default: { Console.WriteLine("Error input"); break; }
+                            default: { Console.WriteLine("Ошибка ввода меню"); break; }
                         }
-                      //  Console.WriteLine("Enter key");
+                        Console.WriteLine("Для продолжения нажмите любую кнопку");
                         Console.ReadKey();
                         Console.Clear();
                     }
-                   // DeleteUserByID(connection, 4);
-                    //InsertUser(connection, "dimka", "popov", 228);
-                    //SelectAllUsers(connection);
-                   // SelectUsersByID(connection, 4);
-                   // SelectUsersByName(connection, "dimon");
-                   // string s = Console.ReadLine();
-
                     connection.Close();
-                    Console.WriteLine("Connection closed.");
+                    Console.WriteLine("Подлючение закрыто");
                 }
                 catch (OleDbException ex)
                 {
-                    Console.WriteLine("An error occurred: " + ex.Message);
+                    Console.WriteLine("Ошибка: " + ex.Message);
+                    Console.ReadKey();
+                }
+                catch (FormatException e)
+                {
+                    Console.WriteLine("Ошибка: " + e.Message);
                     Console.ReadKey();
                 }
             }
@@ -87,12 +92,12 @@ namespace спп_2_лаба
 
         static int menu()
         {
-            Console.WriteLine("1) Select all users");
-            Console.WriteLine("2) Select user by id");
-            Console.WriteLine("3) Select user by name");
-            Console.WriteLine("4) insert user");
-            Console.WriteLine("5) delete user by id");
-            Console.WriteLine("6) exit");
+            Console.WriteLine("1) Вывести всех пользователей");
+            Console.WriteLine("2) Найти пользователя по id");
+            Console.WriteLine("3) Найти пользователя по name");
+            Console.WriteLine("4) Добавить пользователя");
+            Console.WriteLine("5) Удалить пользователя по id");
+            Console.WriteLine("6) Выход");
             int a  = Convert.ToInt32( Console.ReadLine());
             return a;
         }
@@ -103,29 +108,21 @@ namespace спп_2_лаба
             // создаем объект OleDbCommand
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText =
-                    "SELECT id , name_user, Surname, phone, date_create " +
+                    "SELECT id , name_user, Surname, phone, email " +
                         "FROM Users ";
             OleDbDataAdapter adapter = new OleDbDataAdapter();
             adapter.SelectCommand = myOleDbCommand;
             DataSet myDataset = new DataSet();
             adapter.Fill(myDataset, "Users");
             DataTable myDataTable = myDataset.Tables["Users"];
-            foreach (DataRow dr in myDataTable.Rows)
-            { 
-                Console.WriteLine("Name=" + dr["name_user"] + "   " + "surname=" + dr["surname"] +
-                   "   " + "phone=" + dr["phone"] +
-               "   " + "date=" + dr["date_create"] +
-               "   " + "id=" + dr["id"]);
-
-            }
-
+            SelectRow(myDataTable);
         }
         static void SelectUsersByID(OleDbConnection connection, int id)
         {
             // создаем объект OleDbCommand
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText =
-                    "SELECT id , name_user, Surname, phone, date_create " +
+                    "SELECT id , name_user, Surname, phone, email " +
                         "FROM Users " +
                         "Where id =" + id;
             OleDbDataAdapter adapter = new OleDbDataAdapter();
@@ -133,19 +130,7 @@ namespace спп_2_лаба
             DataSet myDataset = new DataSet();
             adapter.Fill(myDataset, "Users");
             DataTable myDataTable = myDataset.Tables["Users"];
-            if (myDataTable.Rows.Count ==0)
-            {
-                Console.WriteLine("Not found user");
-                return;
-            }
-            foreach (DataRow dr in myDataTable.Rows)
-            { 
-                Console.WriteLine("Name=" + dr["name_user"] + "   " + "surname=" + dr["surname"] +
-                   "   " + "phone=" + dr["phone"] +
-               "   " + "date=" + dr["date_create"] +
-               "   " + "id=" + dr["id"]);
-
-            }
+            SelectRow(myDataTable);
         }
 
         static void SelectUsersByName(OleDbConnection connection, String name)
@@ -153,45 +138,30 @@ namespace спп_2_лаба
             // создаем объект OleDbCommand
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText =
-                    "SELECT id , name_user, Surname, phone, date_create " +
+                    "SELECT id , name_user, Surname, phone, email " +
                         "FROM Users " +
                         "Where name_user =@name ;" ;
             myOleDbCommand.Parameters.AddWithValue("@name", name);
-            // создаем объект OleDbDataReader и вызываем метод ExecuteReader() для выполнения введенного SQL-запроса
-         //   OleDbDataReader dr = myOleDbCommand.ExecuteReader();
-            // Читаем первую (в нашем случае - и единственную) строку ответа базы данных с помощью метода Read() объекта OleDbDataReader
-          //  dr.Read();
              OleDbDataAdapter adapter = new OleDbDataAdapter();
              adapter.SelectCommand = myOleDbCommand;
              DataSet myDataset = new DataSet();
              adapter.Fill(myDataset, "Users");
              DataTable myDataTable = myDataset.Tables["Users"];
-            if (myDataTable.Rows.Count == 0)
-            {
-                Console.WriteLine("Not found user");
-                return;
-            }
-            foreach (DataRow dr in myDataTable.Rows)
-            {
-                Console.WriteLine("Name=" + dr["name_user"] + "   " + "surname=" + dr["surname"] +
-                   "   " + "phone=" + dr["phone"] +
-               "   " + "date=" + dr["date_create"] +
-               "   " + "id=" + dr["id"]);
-
-            }
+            SelectRow(myDataTable);
         }
 
-        static void InsertUser(OleDbConnection connection, String name, String surname, int phone)
+        static void InsertUser(OleDbConnection connection, String name, String surname,long phone, String email)
         {
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText =
-                    @"INSERT INTO Users (name_user,surname, phone) VALUES (
-                      @name, @surname, @phone)";
+                    @"INSERT INTO Users (name_user,surname, phone,email) VALUES (
+                      @name, @surname, @phone, @email)";
             myOleDbCommand.Parameters.AddWithValue("@name", name);
             myOleDbCommand.Parameters.AddWithValue("@surname", surname);
             myOleDbCommand.Parameters.AddWithValue("@phone", phone);
+            myOleDbCommand.Parameters.AddWithValue("@email", email);
             myOleDbCommand.ExecuteNonQuery();
-            Console.WriteLine("User add");
+            Console.WriteLine("Пользователь успешно добавлен");
         }
 
         static void DeleteUserByID(OleDbConnection connection, int id)
@@ -199,7 +169,23 @@ namespace спп_2_лаба
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText = "DELETE FROM Users WHERE id=" + id;
             myOleDbCommand.ExecuteNonQuery();
-            Console.WriteLine("User delete");
+            Console.WriteLine("Пользователь успешно удален");
+        }
+
+       
+
+        static void SelectRow(DataTable myDataTable)
+        {
+            if (myDataTable.Rows.Count == 0)
+            {
+                Console.WriteLine("Пользователь не найден");
+                return;
+            }
+            Console.WriteLine("Id  |" + "Name \t\t     |" + "Surname \t\t      |" + "Phone \t\t|" + "Email \t ");
+            foreach (DataRow dr in myDataTable.Rows)
+            {
+                Console.WriteLine("{0,-5}{1,-25}{2,-25}{3,-18}{4,-8}", dr["id"], dr["name_user"], dr["surname"], dr["phone"], dr["email"]);
+            }
         }
 
     }
