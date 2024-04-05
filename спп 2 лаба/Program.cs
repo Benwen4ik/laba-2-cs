@@ -18,13 +18,15 @@ namespace спп_2_лаба
 
             using (OleDbConnection connection = new OleDbConnection(connectionString))
             {
-                try
+                bool bl = true;
+                int a;
+                connection.Open();
+                while (bl == true)
                 {
-                    connection.Open();
-                    bool bl = true;
-                    int a;
-                    while (bl == true)
+                    try
                     {
+                    //while (bl == true)
+                    //{
                         a = menu();
                         switch (a)
                         {
@@ -53,12 +55,17 @@ namespace спп_2_лаба
                                     long phone = Convert.ToInt64(Console.ReadLine());
                                     Console.WriteLine("Введите email:");
                                     String email = Console.ReadLine();
-                                    if (!email.Contains('@'))
+                                    if (!email.Contains('@') )
                                     {
                                         Console.WriteLine("Введен неккоректный email(отсуствует @)");
                                         break;
                                     }
-                                    InsertUser(connection, name, surname, phone,email);
+                                    if (!email.EndsWith(".ru") && !email.EndsWith(".by") && !email.EndsWith(".org"))
+                                    {
+                                        Console.WriteLine("Введен неккоректный email(отсуствует .ru, .by, .org)");
+                                        break;
+                                    }
+                                    InsertUser(connection, name, surname, phone, email);
                                     break;
                                 }
                             case 5:
@@ -74,20 +81,22 @@ namespace спп_2_лаба
                         Console.ReadKey();
                         Console.Clear();
                     }
-                    connection.Close();
-                    Console.WriteLine("Подлючение закрыто");
+                    catch (OleDbException ex)
+                    {
+                        Console.WriteLine("Ошибка: " + ex.Message);
+                       Console.ReadKey();
+                       Console.Clear();
+                       }
+                    catch (FormatException e)
+                    {
+                        Console.WriteLine("Ошибка: " + e.Message);
+                        Console.ReadKey();
+                        Console.Clear();
+                        }
                 }
-                catch (OleDbException ex)
-                {
-                    Console.WriteLine("Ошибка: " + ex.Message);
-                    Console.ReadKey();
-                }
-                catch (FormatException e)
-                {
-                    Console.WriteLine("Ошибка: " + e.Message);
-                    Console.ReadKey();
-                }
-            }
+            connection.Close();
+            Console.WriteLine("Подлючение закрыто");
+        }
         }
 
         static int menu()
@@ -109,7 +118,7 @@ namespace спп_2_лаба
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText =
                     "SELECT id , name_user, Surname, phone, email " +
-                        "FROM Users ";
+                        "FROM Users";
             OleDbDataAdapter adapter = new OleDbDataAdapter();
             adapter.SelectCommand = myOleDbCommand;
             DataSet myDataset = new DataSet();
