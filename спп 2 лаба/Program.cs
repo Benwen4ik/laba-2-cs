@@ -20,17 +20,17 @@ namespace спп_2_лаба
             {
                 bool bl = true;
                 int a;
-                connection.Open();
-                while (bl == true)
+                try
                 {
-                    try
+                    connection.Open();
+                    while (bl == true)
                     {
                         switch (option_table())
                         {
                             case 1:
                                 {
-                                    
-                                    switch_users( connection);
+
+                                    switch_users(connection);
                                     break;
                                 }
                             case 2:
@@ -43,34 +43,46 @@ namespace спп_2_лаба
                                     bl = false;
                                     break;
                                 }
+                            case 4:
+                                {
+                                    getTables(connection);
+                                    break;
+                                }
                             default: { Console.WriteLine("Ошибка ввода меню"); break; }
-                        }                        
+                        }
                         Console.WriteLine("Для продолжения нажмите любую кнопку");
                         Console.ReadKey();
                         Console.Clear();
                     }
-                    catch (InvalidOperationException exp)
-                    {
-                        Console.WriteLine("Ошибка: " + exp.Message);
-                        Console.ReadKey();
-                        Console.Clear();
-                    }
-                    catch (OleDbException ex)
-                    {
-                        Console.WriteLine("Ошибка: " + ex.Message);
-                        Console.ReadKey();
-                        Console.Clear();
-                    }
-                    catch (FormatException e)
-                    {
-                        Console.WriteLine("Ошибка: " + e.Message);
-                        Console.ReadKey();
-                        Console.Clear();
-                    }
+                    connection.Close();
+                    Console.WriteLine("Подлючение закрыто");
                 }
-            connection.Close();
-            Console.WriteLine("Подлючение закрыто");
-        }
+                catch (InvalidOperationException exp)
+                {
+                    Console.WriteLine("Ошибка объекта: " + exp.Message);
+                    Console.ReadKey();
+                    Console.Clear();
+                }
+                catch (OleDbException ex)
+                {
+                    Console.WriteLine("Ошибка источника данных: " + ex.Message);
+                    Console.ReadKey();
+                    Console.Clear();
+                }
+                catch (FormatException e)
+                {
+                    Console.WriteLine("Ошибка формата: " + e.Message);
+                    Console.ReadKey();
+                    Console.Clear();
+                }
+                catch (Exception er)
+                {
+                    Console.WriteLine("Ошибка: " + er.Message);
+                    Console.ReadKey();
+                    Console.Clear();
+                }
+
+            }
         }
 
         static int menu_users()
@@ -145,12 +157,33 @@ namespace спп_2_лаба
                             Console.Clear();
                             Console.WriteLine("Введите имя:");
                             String name = Console.ReadLine();
+                            if (name.Length > 20)
+                            {
+                                Console.WriteLine("Длина имени должна быть не более 20 символов");
+                                break;
+                            }
                             Console.WriteLine("Введите фамилию:");
                             String surname = Console.ReadLine();
+                            if (surname.Length > 20)
+                            {
+                                Console.WriteLine("Длина имени должна быть не более 20 символов");
+                                break;
+                            }
                             Console.WriteLine("Введите телефон:");
-                            long phone = Convert.ToInt64(Console.ReadLine());
+                            // long phone = Convert.ToInt64(Console.ReadLine());
+                            String phone = Console.ReadLine();
+                            if (phone.Length > 16)
+                            {
+                                Console.WriteLine("Длина телефона должна быть не более 16 символов");
+                                break;
+                            }
                             Console.WriteLine("Введите email:");
                             String email = Console.ReadLine();
+                            if (email.Length > 30)
+                            {
+                                Console.WriteLine("Длина email должна быть не более 30 символов");
+                                break;
+                            }
                             if (!email.Contains('@'))
                             {
                                 Console.WriteLine("Введен неккоректный email(отсуствует @)");
@@ -283,7 +316,7 @@ namespace спп_2_лаба
             SelectRow(createDataTable("Users", myOleDbCommand));
         }
 
-        static void InsertUser(OleDbConnection connection, String name, String surname,long phone, String email)
+        static void InsertUser(OleDbConnection connection, String name, String surname,String phone, String email)
         {
             OleDbCommand myOleDbCommand = connection.CreateCommand();
             myOleDbCommand.CommandText =
@@ -459,6 +492,15 @@ namespace спп_2_лаба
                         "FROM Items " +
                         "Where id_user =" + id;
             return createDataTable("Items", Command);
+        }
+
+        static void getTables(OleDbConnection connection)
+        {
+            DataTable dt = connection.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, new object[] { null, null, null, "TABLE" });
+            foreach (DataRow item in dt.Rows)
+            {
+                Console.WriteLine((string)item["TABLE_NAME"]);
+            }
         }
 
     }
